@@ -15,7 +15,7 @@ fun main() {
         println("4. Delete")
         println("5. Exit")
         print("Select an option: ")
-        when (scanner.nextLine()) { //TODO: implement below
+        when (scanner.nextLine()) { //TODO: implement below.
             "1" -> println("Create operation not implemented")
             "2" -> println("Read operation not implemented")
             "3" -> println("Update operation not implemented")
