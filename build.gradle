@@ -1,0 +1,42 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.9.24'
+    id 'org.jetbrains.compose' version '1.7.0'
+}
+
+repositories {
+    mavenCentral()
+    google()
+    maven { url 'https://maven.pkg.jetbrains.space/public/p/compose/dev' }
+}
+
+dependencies {
+    implementation 'org.jetbrains.compose.desktop:desktop:1.7.0'
+
+// Embedded SQLite; ships native for macOS and Windows
+    implementation 'org.xerial:sqlite-jdbc:3.45.3.0'
+
+// Argon2id for KDF
+    implementation 'de.mkammerer:argon2-jvm:2.11'
+
+// Okio (handy for byte utils)
+    implementation 'com.squareup.okio:okio:3.9.0'
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+compose.desktop {
+    application {
+        mainClass = 'com.example.vault.MainKt'
+        nativeDistributions {
+// mac builds on mac; win builds on Windows runner
+            targetFormats(TargetFormat.Dmg, TargetFormat.Pkg, TargetFormat.Exe, TargetFormat.Msi)
+            packageName = 'MyVault'
+            packageVersion = '1.0.0'
+// iconFile = file('icons/myvault.icns')
+        }
+    }
+}
