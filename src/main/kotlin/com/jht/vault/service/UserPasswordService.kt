@@ -1,6 +1,6 @@
-package com.jht.vault.domain.service
+package com.jht.vault.service
 
-import com.jht.vault.domain.repository.UserPasswordRepository
+import com.jht.vault.repository.UserPasswordRepository
 import com.jht.vault.util.CryptoUtils
 
 class UserPasswordService(

@@ -1,7 +1,7 @@
-package com.jht.vault.domain.service
+package com.jht.vault.service
 
 import com.jht.vault.domain.vo.EncryptedEntry
-import com.jht.vault.domain.repository.MasterPasswordRepository
+import com.jht.vault.repository.MasterPasswordRepository
 import com.jht.vault.util.CryptoUtils
 import com.jht.vault.util.PasswordUtils
 

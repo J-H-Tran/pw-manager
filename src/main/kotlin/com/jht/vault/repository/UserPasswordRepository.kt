@@ -1,4 +1,4 @@
-package com.jht.vault.domain.repository
+package com.jht.vault.repository
 
 import java.sql.Connection
 

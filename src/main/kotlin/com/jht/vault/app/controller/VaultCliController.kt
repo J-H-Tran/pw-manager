@@ -1,7 +1,7 @@
 package com.jht.vault.app.controller
 
 import com.jht.vault.app.enums.AuthResult
-import com.jht.vault.domain.service.VaultAppService
+import com.jht.vault.service.VaultAppService
 import java.util.Scanner
 
 class VaultCliController(

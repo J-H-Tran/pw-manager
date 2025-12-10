@@ -1,4 +1,4 @@
-package com.jht.vault.domain.repository
+package com.jht.vault.repository
 
 import com.jht.vault.domain.vo.EncryptedEntry
 import java.sql.Connection

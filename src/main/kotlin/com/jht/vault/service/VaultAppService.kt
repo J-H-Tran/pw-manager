@@ -1,4 +1,4 @@
-package com.jht.vault.domain.service
+package com.jht.vault.service
 
 import com.jht.vault.app.enums.AuthResult
 import com.jht.vault.util.CryptoUtils
