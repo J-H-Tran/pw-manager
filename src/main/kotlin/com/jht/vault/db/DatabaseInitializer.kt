@@ -1,5 +1,8 @@
 package com.jht.vault.db
 
+import com.jht.vault.util.CryptoUtils
+import com.jht.vault.util.PasswordUtils
+import java.security.SecureRandom
 import java.sql.DriverManager
 
 object DatabaseInitializer {
@@ -55,6 +58,34 @@ object DatabaseInitializer {
 //        createTables.forEach { stmt.execute(it) }
         stmt.execute(createUserPasswordTable)
         stmt.close()
+
+        // Populate backup passwords if table is empty
+        val rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM user_password")
+        if (rs.next() && rs.getInt(1) == 0) {
+            insertBackupPasswords(conn)
+        }
+        rs.close()
+        conn.close()
+    }
+
+    fun insertBackupPasswords(conn: java.sql.Connection) {
+        conn.createStatement().execute("DELETE FROM user_password")
+        val ps = conn.prepareStatement("INSERT INTO user_password (hash) VALUES (?)")
+        repeat(4) {
+            val password = PasswordUtils.generateRandomPassword()
+            val hashed = CryptoUtils.hashPassword(password)
+            ps.setString(1, hashed)
+            ps.addBatch()
+            password.fill('\u0000') // Clear password from memory
+        }
+        ps.executeBatch()
+        ps.close()
+    }
+
+    fun regenerateBackupPasswords(path: String) {
+        val url = "jdbc:sqlite:$path"
+        val conn = DriverManager.getConnection(url)
+        DatabaseInitializer.insertBackupPasswords(conn)
         conn.close()
     }
 }

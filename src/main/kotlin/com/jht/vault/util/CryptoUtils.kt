@@ -16,6 +16,11 @@ object CryptoUtils {
         return argon2.hash(2, 65536, 1, password, StandardCharsets.UTF_8)
     }
 
+    fun verifyPassword(password: CharArray, hash: String): Boolean {
+        val argon2 = Argon2Factory.create()
+        return argon2.verify(hash, password, StandardCharsets.UTF_8)
+    }
+
     fun deriveKey(password: CharArray, salt: ByteArray, keyLength: Int = 32): ByteArray {
         val spec = PBEKeySpec(password, salt, 65536, keyLength * 8)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
