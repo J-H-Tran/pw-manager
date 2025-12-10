@@ -1,53 +1,19 @@
 package com.jht.vault
 
+import com.jht.vault.db.DatabaseHelper
 import com.jht.vault.db.DatabaseInitializer
 import java.util.Scanner
 
 fun main() {
-    val scanner = Scanner(System.`in`)
-    println("Welcome to Password Manager")
+    val dbPath = "src/main/resources/data/vault.db"
+    DatabaseInitializer.initialize(dbPath)
 
-    while (true) {
-        println("Enter master password:")
-        val input = scanner.nextLine()
-
-        if (PasswordManager.authenticate(input)) {
-            println("Authenticated!")
-            if (!PasswordManager.hasUserPassword()) {
-                println("Set your own master password:")
-                val newPass = scanner.nextLine()
-                PasswordManager.setUserPassword(newPass)
-                println("Master password set.")
-            }
-            break
-        } else {
-            println("Invalid password. Try again.")
+    DatabaseHelper.open(dbPath, "").use { conn ->
+        val stmt = conn.createStatement()
+        val rs = stmt.executeQuery("SELECT COUNT(*) FROM user_password")
+        if (rs.next()) {
+            println("user_password entries: ${rs.getInt(1)}")
         }
+        DatabaseHelper.close(conn)
     }
 }
-
-//fun main() {
-//    val dbInit = DatabaseInitializer
-//    dbInit.initialize("src/main/resources/data/vault.db")
-//
-//    val scanner = Scanner(System.`in`)
-//    while (true) {
-//        println("1. Create")
-//        println("2. Read")
-//        println("3. Update")
-//        println("4. Delete")
-//        println("5. Exit")
-//        print("Select an option: ")
-//        when (scanner.nextLine()) { //TODO: implement below..
-//            "1" -> println("Create operation not implemented")
-//            "2" -> println("Read operation not implemented")
-//            "3" -> println("Update operation not implemented")
-//            "4" -> println("Delete operation not implemented")
-//            "5" -> {
-//                println("Exiting.")
-//                break
-//            }
-//            else -> println("Invalid option")
-//        }
-//    }
-//}
