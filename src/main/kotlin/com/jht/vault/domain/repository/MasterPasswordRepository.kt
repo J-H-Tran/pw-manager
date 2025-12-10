@@ -1,5 +1,6 @@
 package com.jht.vault.domain.repository
 
+import com.jht.vault.domain.vo.EncryptedEntry
 import java.sql.Connection
 
 class MasterPasswordRepository(
@@ -47,11 +48,3 @@ class MasterPasswordRepository(
         stmt.close()
     }
 }
-
-data class EncryptedEntry(
-    val encryptedPassword: ByteArray,
-    val iv: ByteArray,
-    val aad: ByteArray?,
-    val salt: ByteArray,
-    val algorithm: String
-)

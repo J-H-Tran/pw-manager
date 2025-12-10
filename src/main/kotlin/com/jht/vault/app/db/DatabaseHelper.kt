@@ -1,4 +1,4 @@
-package com.jht.vault.db
+package com.jht.vault.app.db
 
 import org.slf4j.LoggerFactory
 import java.sql.Connection

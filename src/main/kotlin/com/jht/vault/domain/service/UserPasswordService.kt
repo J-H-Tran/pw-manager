@@ -2,7 +2,6 @@ package com.jht.vault.domain.service
 
 import com.jht.vault.domain.repository.UserPasswordRepository
 import com.jht.vault.util.CryptoUtils
-import com.jht.vault.util.PasswordUtils
 
 class UserPasswordService(
     private val repository: UserPasswordRepository
@@ -17,4 +16,6 @@ class UserPasswordService(
         val hash = repository.getHash() ?: ""
         return CryptoUtils.verifyPassword(input, hash)
     }
+
+    fun isEmpty(): Boolean = repository.isEmpty()
 }

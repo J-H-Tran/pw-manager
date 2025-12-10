@@ -17,6 +17,16 @@ class UserPasswordRepository(
         return if (rs.next()) rs.getString(1) else null
     }
 
+    fun isEmpty(): Boolean {
+        val stmt = conn.prepareStatement("SELECT COUNT(*) FROM user_password")
+        val rs = stmt.executeQuery()
+        rs.next()
+        val count = rs.getInt(1)
+        rs.close()
+        stmt.close()
+        return count == 0
+    }
+
     fun deleteAll() {
         val stmt = conn.createStatement()
         stmt.executeUpdate("DELETE FROM user_password")

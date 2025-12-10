@@ -1,4 +1,4 @@
-package com.jht.vault.db
+package com.jht.vault.app.db
 
 import com.jht.vault.util.CryptoUtils
 import com.jht.vault.util.PasswordUtils
