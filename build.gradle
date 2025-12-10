@@ -18,8 +18,7 @@ dependencies {
     implementation "de.mkammerer:argon2-jvm:2.11"
 
     // SLF4J API and simple logger backend
-    implementation "ch.qos.logback:logback-classic:1.4.14"
-
+    implementation 'ch.qos.logback:logback-classic:1.5.13'
 }
 
 kotlin {

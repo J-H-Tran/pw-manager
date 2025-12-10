@@ -2,90 +2,71 @@ package com.jht.vault.db
 
 import com.jht.vault.util.CryptoUtils
 import com.jht.vault.util.PasswordUtils
-import java.security.SecureRandom
+import java.sql.Connection
 import java.sql.DriverManager
 
 object DatabaseInitializer {
     val createTables = listOf(
         """
-            CREATE TABLE IF NOT EXISTS header (
-                id INTEGER PRIMARY KEY,
-                wrapped_dek BLOB NOT NULL
-            );
-            """,
-                """
-            CREATE TABLE IF NOT EXISTS account (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                notes TEXT,
-                created_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL
-            );
-            """,
-                """
-            CREATE TABLE IF NOT EXISTS credential (
-                id INTEGER PRIMARY KEY,
-                account_id INTEGER NOT NULL,
-                username TEXT,
-                label TEXT,
-                password_enc BLOB NOT NULL,
+            CREATE TABLE IF NOT EXISTS master_password (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                encrypted_password BLOB NOT NULL,
                 iv BLOB NOT NULL,
-                created_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL,
-                FOREIGN KEY(account_id) REFERENCES account(id)
-            );    """,
-                """
-            CREATE TABLE IF NOT EXISTS metadata (
-                id INTEGER PRIMARY KEY,
-                credential_id INTEGER NOT NULL,
-                key TEXT NOT NULL,
-                value TEXT,
-                FOREIGN KEY(credential_id) REFERENCES credential(id)
-            );
+                aad BLOB,
+                salt BLOB,
+                algorithm TEXT DEFAULT 'AES-GCM'
+            )
+        """,
+        """
+            CREATE TABLE IF NOT EXISTS user_password (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                hash VARCHAR(128) NOT NULL
+            )
         """
     )
-    private val createUserPasswordTable = """
-        CREATE TABLE IF NOT EXISTS user_password (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            hash TEXT NOT NULL
-        );
-    """.trimIndent()
 
     fun initialize(path: String) {
         val url = "jdbc:sqlite:$path"
         val conn = DriverManager.getConnection(url)
         val stmt = conn.createStatement()
-//        createTables.forEach { stmt.execute(it) }
-        stmt.execute(createUserPasswordTable)
+        createTables.forEach { stmt.execute(it) }
         stmt.close()
 
-        // Populate backup passwords if table is empty
-        val rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM user_password")
+        // Populate backup password if table is empty
+        val rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM master_password")
         if (rs.next() && rs.getInt(1) == 0) {
-            insertBackupPasswords(conn)
+            insertBackupPassword(conn)
         }
         rs.close()
         conn.close()
     }
 
-    fun insertBackupPasswords(conn: java.sql.Connection) {
-        conn.createStatement().execute("DELETE FROM user_password")
-        val ps = conn.prepareStatement("INSERT INTO user_password (hash) VALUES (?)")
-        repeat(4) {
-            val password = PasswordUtils.generateRandomPassword()
-            val hashed = CryptoUtils.hashPassword(password)
-            ps.setString(1, hashed)
-            ps.addBatch()
-            password.fill('\u0000') // Clear password from memory
-        }
-        ps.executeBatch()
+    fun insertBackupPassword(conn: Connection) {
+        conn.createStatement().execute("DELETE FROM master_password")
+        val ps = conn.prepareStatement(
+            "INSERT INTO master_password (encrypted_password, iv, aad, salt, algorithm) VALUES (?, ?, ?, ?, ?)"
+        )
+        val password = PasswordUtils.generateRandomPassword()
+        val passwordByte = password.joinToString("").toByteArray(Charsets.UTF_8)
+        println("Generated backup master password (store securely):")
+        println(String(password))
+        val salt = CryptoUtils.generateSalt()
+        val key = CryptoUtils.deriveKey(password, salt)
+        val aad = "backup".toByteArray(Charsets.UTF_8)
+        val (encrypted, iv) = CryptoUtils.encryptAESGCM(passwordByte, key, aad)
+        ps.setBytes(1, encrypted)
+        ps.setBytes(2, iv)
+        ps.setBytes(3, aad)
+        ps.setBytes(4, salt)
+        ps.setString(5, "AES-GCM")
+        ps.executeUpdate()
         ps.close()
     }
 
-    fun regenerateBackupPasswords(path: String) {
+    fun regenerateBackupPassword(path: String) {
         val url = "jdbc:sqlite:$path"
         val conn = DriverManager.getConnection(url)
-        DatabaseInitializer.insertBackupPasswords(conn)
+        insertBackupPassword(conn)
         conn.close()
     }
 }

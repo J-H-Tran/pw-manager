@@ -1,5 +1,6 @@
 package com.jht.vault.domain.service
 
+import com.jht.vault.domain.repository.EncryptedEntry
 import com.jht.vault.domain.repository.MasterPasswordRepository
 import com.jht.vault.util.CryptoUtils
 import com.jht.vault.util.PasswordUtils
@@ -7,24 +8,35 @@ import com.jht.vault.util.PasswordUtils
 class MasterPasswordService(
     private val repository: MasterPasswordRepository
 ) {
-    fun generateAndStorePasswords(count: Int): List<CharArray> {
-        val passwords = List(count) { PasswordUtils.generateRandomPassword() }
-        passwords.forEach { pw ->
-            println(pw)
-            val hash = CryptoUtils.hashPassword(pw)
-            repository.saveHash(hash)
-            pw.fill('\u0000')
-        }
-        return passwords
+    fun generateAndSaveBackupMasterPassword(
+        aad: ByteArray?,
+        algorithm: String = "AES-GCM"
+    ) {
+        val password = PasswordUtils.generateRandomPassword()
+        println("Backup Master Password: ${String(password)}")
+        val salt = CryptoUtils.generateSalt()
+        val key = CryptoUtils.deriveKey(password, salt)
+        val (encrypted, iv) = CryptoUtils.encryptAESGCM(String(password).toByteArray(Charsets.UTF_8), key, aad)
+        repository.deleteAll() // Ensure only one master password exists
+        repository.saveEncryptedPassword(encrypted, iv, aad, salt, algorithm)
     }
 
-    fun authenticate(input: CharArray): Boolean {
-        val hashes = repository.getAllHashes()
-        return hashes.any { CryptoUtils.verifyPassword(input, it) }
+    fun getMasterPassword(): EncryptedEntry? {
+        return repository.getLatestMasterPassword()
     }
 
-    fun rotatePasswords(count: Int): List<CharArray> {
+    fun authenticate(
+        passphraseByte: ByteArray,
+        key: ByteArray,
+        aad: ByteArray?,
+        encryptedPassword: ByteArray,
+        iv: ByteArray,
+    ): Boolean {
+        val decrypted = CryptoUtils.decryptAESGCM(key, aad ?: ByteArray(0), encryptedPassword, iv)
+        return decrypted.contentEquals(passphraseByte)
+    }
+
+    fun deleteMasterPassword() {
         repository.deleteAll()
-        return generateAndStorePasswords(count)
     }
 }

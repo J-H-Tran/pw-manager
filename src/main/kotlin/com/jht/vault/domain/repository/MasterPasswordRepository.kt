@@ -5,24 +5,53 @@ import java.sql.Connection
 class MasterPasswordRepository(
     private val conn: Connection
 ) {
-    fun saveHash(hash: String) {
-        val ps = conn.prepareStatement("INSERT INTO user_password (hash) VALUES (?)")
-        ps.setString(1, hash)
+    fun saveEncryptedPassword(
+        encryptedPassword: ByteArray,
+        iv: ByteArray,
+        aad: ByteArray?,
+        salt: ByteArray,
+        algorithm: String = "AES-GCM"
+    ) {
+        val ps = conn.prepareStatement(
+            "INSERT INTO master_password (encrypted_password, iv, aad, salt, algorithm) VALUES (?, ?, ?, ?, ?)"
+        )
+        ps.setBytes(1, encryptedPassword)
+        ps.setBytes(2, iv)
+        ps.setBytes(3, aad)
+        ps.setBytes(4, salt)
+        ps.setString(5, algorithm)
         ps.executeUpdate()
+        ps.close()
     }
 
-    fun getAllHashes(): List<String> {
+    fun getLatestMasterPassword(): EncryptedEntry? {
         val stmt = conn.createStatement()
-        val rs = stmt.executeQuery("SELECT hash FROM user_password")
-        val hashes = mutableListOf<String>()
-        while (rs.next()) {
-            hashes.add(rs.getString(1))
-        }
-        return hashes
+        val rs = stmt.executeQuery("SELECT encrypted_password, iv, aad, salt, algorithm FROM master_password ORDER BY id DESC LIMIT 1")
+        val entry = if (rs.next()) {
+            EncryptedEntry(
+                encryptedPassword = rs.getBytes("encrypted_password"),
+                iv = rs.getBytes("iv"),
+                aad = rs.getBytes("aad"),
+                salt = rs.getBytes("salt"),
+                algorithm = rs.getString("algorithm")
+            )
+        } else null
+        rs.close()
+        stmt.close()
+        return entry
     }
 
     fun deleteAll() {
         val stmt = conn.createStatement()
-        stmt.executeUpdate("DELETE FROM user_password")
+        stmt.executeUpdate("DELETE FROM master_password")
+        stmt.close()
     }
 }
+
+data class EncryptedEntry(
+    val encryptedPassword: ByteArray,
+    val iv: ByteArray,
+    val aad: ByteArray?,
+    val salt: ByteArray,
+    val algorithm: String
+)
