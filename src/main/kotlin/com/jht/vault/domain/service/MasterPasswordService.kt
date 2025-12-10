@@ -13,16 +13,18 @@ class MasterPasswordService(
         algorithm: String = "AES-GCM"
     ) {
         val password = PasswordUtils.generateRandomPassword()
-        println("Backup Master Password: ${String(password)}")
+        println("New Master Password: ${String(password)}")
+
+        val passwordByte = password.joinToString("").toByteArray(Charsets.UTF_8)
         val salt = CryptoUtils.generateSalt()
         val key = CryptoUtils.deriveKey(password, salt)
-        val (encrypted, iv) = CryptoUtils.encryptAESGCM(String(password).toByteArray(Charsets.UTF_8), key, aad)
+        val (encrypted, iv) = CryptoUtils.encryptAESGCM(passwordByte, key, aad)
         repository.deleteAll() // Ensure only one master password exists
-        repository.saveEncryptedPassword(encrypted, iv, aad, salt, algorithm)
+        repository.saveMasterPassword(encrypted, iv, aad, salt, algorithm)
     }
 
     fun getMasterPassword(): EncryptedEntry? {
-        return repository.getLatestMasterPassword()
+        return repository.getMasterPassword()
     }
 
     fun authenticate(

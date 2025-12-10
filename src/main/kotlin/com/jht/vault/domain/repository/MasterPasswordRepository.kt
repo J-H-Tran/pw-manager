@@ -5,7 +5,7 @@ import java.sql.Connection
 class MasterPasswordRepository(
     private val conn: Connection
 ) {
-    fun saveEncryptedPassword(
+    fun saveMasterPassword(
         encryptedPassword: ByteArray,
         iv: ByteArray,
         aad: ByteArray?,
@@ -24,7 +24,7 @@ class MasterPasswordRepository(
         ps.close()
     }
 
-    fun getLatestMasterPassword(): EncryptedEntry? {
+    fun getMasterPassword(): EncryptedEntry? {
         val stmt = conn.createStatement()
         val rs = stmt.executeQuery("SELECT encrypted_password, iv, aad, salt, algorithm FROM master_password ORDER BY id DESC LIMIT 1")
         val entry = if (rs.next()) {

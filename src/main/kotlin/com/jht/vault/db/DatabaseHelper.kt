@@ -6,6 +6,7 @@ import java.sql.DriverManager
 
 object DatabaseHelper {
     private val logger = LoggerFactory.getLogger(javaClass)
+
     fun open(path: String, passphrase: String): Connection {
         val url = "jdbc:sqlite:$path"
         val conn = DriverManager.getConnection(url)

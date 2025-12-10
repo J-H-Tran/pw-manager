@@ -6,7 +6,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 object DatabaseInitializer {
-    val createTables = listOf(
+    private val createTables = listOf(
         """
             CREATE TABLE IF NOT EXISTS master_password (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,21 +35,21 @@ object DatabaseInitializer {
         // Populate backup password if table is empty
         val rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM master_password")
         if (rs.next() && rs.getInt(1) == 0) {
-            insertBackupPassword(conn)
+            insertMasterPassword(conn)
         }
         rs.close()
         conn.close()
     }
 
-    fun insertBackupPassword(conn: Connection) {
+    fun insertMasterPassword(conn: Connection) {
         conn.createStatement().execute("DELETE FROM master_password")
         val ps = conn.prepareStatement(
             "INSERT INTO master_password (encrypted_password, iv, aad, salt, algorithm) VALUES (?, ?, ?, ?, ?)"
         )
         val password = PasswordUtils.generateRandomPassword()
+        println("Generated backup master password (store securely): ${String(password)}")
+
         val passwordByte = password.joinToString("").toByteArray(Charsets.UTF_8)
-        println("Generated backup master password (store securely):")
-        println(String(password))
         val salt = CryptoUtils.generateSalt()
         val key = CryptoUtils.deriveKey(password, salt)
         val aad = "backup".toByteArray(Charsets.UTF_8)
@@ -63,10 +63,10 @@ object DatabaseInitializer {
         ps.close()
     }
 
-    fun regenerateBackupPassword(path: String) {
+    fun generateMasterPassword(path: String) {
         val url = "jdbc:sqlite:$path"
         val conn = DriverManager.getConnection(url)
-        insertBackupPassword(conn)
+        insertMasterPassword(conn)
         conn.close()
     }
 }
